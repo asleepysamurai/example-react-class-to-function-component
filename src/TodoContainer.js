@@ -2,86 +2,90 @@
  * Todo Root Container Component
  */
 
-import React, { Component } from 'react';
+import React, { useReducer, useCallback, useEffect } from 'react';
 import TodoItem from './TodoItem';
 import TodoInput from './TodoInput';
 
-class Todo extends Component {
-    constructor(props) {
-        super(props);
-
-        this.state = {
-            todoItems: [],
-            completedItemIds: []
-        };
-    }
-
-    generateID() {
+function Todo() {
+    function generateID() {
         return Date.now().toString(36) + '-' + (Math.random() + 1).toString(36).substring(7);
-    }
+    };
 
-    addTodoItem = (text) => {
-        const newTodoItem = {
-            text,
-            id: this.generateID()
-        };
+    const [state, dispatch] = useReducer((state, action) => {
+        if (action.type === 'toggleItemCompleted') {
+            const { todoItemId } = action;
+            const todoItemIndexInCompletedItemIds = state.completedItemIds.indexOf(todoItemId);
 
-        const todoItems = this.state.todoItems.concat([newTodoItem]);
-        this.setState({ todoItems });
-    }
+            const completedItemIds = todoItemIndexInCompletedItemIds === -1 ?
+                state.completedItemIds.concat([todoItemId]) :
+                ([
+                    ...state.completedItemIds.slice(0, todoItemIndexInCompletedItemIds),
+                    ...state.completedItemIds.slice(todoItemIndexInCompletedItemIds + 1)
+                ]);
 
-    toggleItemCompleted = (todoItemId) => {
-        const todoItemIndexInCompletedItemIds = this.state.completedItemIds.indexOf(todoItemId);
+            return { ...state, completedItemIds };
+        }
 
-        const completedItemIds = todoItemIndexInCompletedItemIds === -1 ?
-            this.state.completedItemIds.concat([todoItemId]) :
-            ([
-                ...this.state.completedItemIds.slice(0, todoItemIndexInCompletedItemIds),
-                ...this.state.completedItemIds.slice(todoItemIndexInCompletedItemIds + 1)
-            ]);
+        if (action.type === 'addTodoItem') {
+            const newTodoItem = {
+                text: action.text,
+                id: generateID()
+            };
 
-        this.setState({ completedItemIds });
-    }
+            const todoItems = state.todoItems.concat([newTodoItem]);
+            return { ...state, todoItems };
+        }
 
-    componentDidMount() {
+        return state;
+    }, {
+        todoItems: [],
+        completedItemIds: []
+    }, (state) => {
         let savedTodos = localStorage.getItem('todos');
 
         try {
             savedTodos = JSON.parse(savedTodos);
-            this.setState(Object.assign({}, this.state, savedTodos));
+            return Object.assign({}, state, savedTodos);
         } catch (err) {
             console.log('Saved todos non-existent or corrupt. Trashing saved todos.');
+            return state;
         }
-    }
+    });
 
-    componentDidUpdate() {
-        localStorage.setItem('todos', JSON.stringify(this.state));
-    }
+    useEffect(() => {
+        localStorage.setItem('todos', JSON.stringify(state));
+    });
 
-    render() {
-        const todoList = this.state.todoItems.map(todoItem => {
-            return (
-                <TodoItem
-                    key={todoItem.id}
-                    completedItemIds={this.state.completedItemIds}
-                    toggleItemCompleted={this.toggleItemCompleted}
-                    {...todoItem} />
-            );
-        });
+    const toggleItemCompleted = useCallback((todoItemId) => {
+        dispatch({ type: 'toggleItemCompleted', todoItemId });
+    }, [dispatch]);
 
-        const todoInput = (
-            <TodoInput
-                onAdd={this.addTodoItem} />
-        );
-
+    const todoList = state.todoItems.map(todoItem => {
         return (
-            <div
-                className="todo-container">
-                {todoList}
-                {todoInput}
-            </div>
+            <TodoItem
+                key={todoItem.id}
+                completedItemIds={state.completedItemIds}
+                toggleItemCompleted={toggleItemCompleted}
+                {...todoItem} />
         );
-    }
+    });
+
+    const addTodoItem = useCallback((text) => {
+        dispatch({ type: 'addTodoItem', text });
+    }, [dispatch]);
+
+    const todoInput = (
+        <TodoInput
+            onAdd={addTodoItem} />
+    );
+
+    return (
+        <div
+            className="todo-container">
+            {todoList}
+            {todoInput}
+        </div>
+    );
 };
 
 export default Todo;
