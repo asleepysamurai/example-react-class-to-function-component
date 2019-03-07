@@ -2,42 +2,34 @@
  * TodoInput Component
  */
 
-import React, { Component } from 'react';
+import React, { useState, useCallback } from 'react';
 
-class TodoInput extends Component {
-    constructor(props) {
-        super(props);
+function TodoInput({
+    onAdd
+}) {
+    const [text, setText] = useState('');
 
-        this.state = {
-            text: ''
-        };
-    }
+    const onTextChange = useCallback((ev) => setText(ev.currentTarget.value), [setText]);
 
-    onTextChange = (ev) => {
-        this.setState({ text: ev.currentTarget.value });
-    }
+    const addTodoItem = useCallback(() => {
+        onAdd(text);
+        setText('');
+    }, [onAdd, text, setText]);
 
-    addTodoItem = () => {
-        this.props.onAdd(this.state.text);
-        this.setState({ text: '' });
-    }
-
-    render() {
-        return (
-            <div
-                className="todo-input">
-                <input
-                    type="text"
-                    onChange={this.onTextChange}
-                    value={this.state.text}
-                    placeholder="Enter Todo Here" />
-                <button
-                    onClick={this.addTodoItem}>
-                    Add Todo
-                </button>
-            </div>
-        );
-    }
+    return (
+        <div
+            className="todo-input">
+            <input
+                type="text"
+                onChange={onTextChange}
+                value={text}
+                placeholder="Enter Todo Here" />
+            <button
+                onClick={addTodoItem}>
+                Add Todo
+            </button>
+        </div>
+    );
 };
 
 export default TodoInput;

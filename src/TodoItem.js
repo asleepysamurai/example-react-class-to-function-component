@@ -18,7 +18,6 @@ class TodoItem extends Component {
     }
 
     static getDerivedStateFromProps(props, state) {
-        debugger;
         const todoItemIndexInCompletedItemIds = props.completedItemIds.indexOf(props.id);
 
         return { completed: todoItemIndexInCompletedItemIds > -1 };

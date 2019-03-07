@@ -59,7 +59,6 @@ class Todo extends Component {
     }
 
     render() {
-        debugger;
         const todoList = this.state.todoItems.map(todoItem => {
             return (
                 <TodoItem
